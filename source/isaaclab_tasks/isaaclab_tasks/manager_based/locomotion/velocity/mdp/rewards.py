@@ -114,3 +114,20 @@ def stand_still_joint_deviation_l1(
     command = env.command_manager.get_command(command_name)
     # Penalize motion when command is nearly zero.
     return mdp.joint_deviation_l1(env, asset_cfg) * (torch.norm(command[:, :2], dim=1) < command_threshold)
+
+def joint_symmetry_reward(env, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    asset = env.scene[asset_cfg.name]
+    joint_pos = asset.data.joint_pos[:, asset_cfg.joint_ids]
+
+    left_indices = [0, 3, 7, 11, 15, 19]   # Left leg joints
+    right_indices = [1, 4, 8, 12, 16, 20]  # Right leg joints
+
+    left_joints = joint_pos[:, left_indices]
+    right_joints = joint_pos[:, right_indices]
+ 
+    symmetry_error = torch.abs(left_joints - right_joints)
+
+    symmetry_penalty = torch.sum(symmetry_error, dim=1)
+
+    return -symmetry_penalty
+
