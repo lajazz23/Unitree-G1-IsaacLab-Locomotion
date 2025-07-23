@@ -22,7 +22,7 @@ from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR, ISAACLAB_NUCLEUS_DIR
 from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
-from isaaclab_tasks.manager_based.locomotion.velocity.mdp.rewards import joint_symmetry_reward
+from isaaclab_tasks.manager_based.locomotion.velocity.mdp.rewards import joint_symmetry_reward, torso_orient_reward
 
 
 import isaaclab_tasks.manager_based.locomotion.velocity.mdp as mdp
@@ -257,11 +257,19 @@ class RewardsCfg:
     )
     joint_symmetry_reward = RewTerm(
         func=joint_symmetry_reward,
-        weight=0.1,
+        weight=1.0,
         params={
             "asset_cfg": SceneEntityCfg("robot")
         }
     )
+    torso_orient_reward= RewTerm(
+        func=torso_orient_reward,
+        weight=0.5,
+        params={
+            "command_name": "base_velocity"
+        }
+    )
+
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
         weight=-1.0,

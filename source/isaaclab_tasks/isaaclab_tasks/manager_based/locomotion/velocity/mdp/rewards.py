@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 from isaaclab.envs import mdp
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import ContactSensor
-from isaaclab.utils.math import quat_apply_inverse, yaw_quat
+from isaaclab.utils.math import quat_apply_inverse, yaw_quat, quat_apply
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -116,11 +116,15 @@ def stand_still_joint_deviation_l1(
     return mdp.joint_deviation_l1(env, asset_cfg) * (torch.norm(command[:, :2], dim=1) < command_threshold)
 
 def joint_symmetry_reward(env, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    
     asset = env.scene[asset_cfg.name]
     joint_pos = asset.data.joint_pos[:, asset_cfg.joint_ids]
 
-    left_indices = [0, 3, 7, 11, 15, 19]   # Left leg joints
-    right_indices = [1, 4, 8, 12, 16, 20]  # Right leg joints
+    # left_indices = [0, 3, 7, 11, 15, 19]   # Left leg joints g1
+    # right_indices = [1, 4, 8, 12, 16, 20]  # Right leg joints g1
+
+    right_indices = [0,1,2,3,4]    # Right leg joints h1
+    left_indices = [5,6,7,8,9] # left leg joints h1
 
     left_joints = joint_pos[:, left_indices]
     right_joints = joint_pos[:, right_indices]
@@ -130,4 +134,25 @@ def joint_symmetry_reward(env, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot
     symmetry_penalty = torch.sum(symmetry_error, dim=1)
 
     return -symmetry_penalty
+
+def torso_orient_reward(env, command_name: str, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    asset = env.scene[asset_cfg.name]
+ 
+    yaw_facing = yaw_quat(asset.data.root_quat_w)
+    
+    device = asset.data.root_quat_w.device
+    batch_size = asset.data.root_quat_w.shape[0]
+    forward_vector = torch.tensor([1.0, 0.0, 0.0], device=device).repeat(batch_size, 1)
+    facing_dir = quat_apply(yaw_facing, forward_vector)
+ 
+    cmd_vel = env.command_manager.get_command(command_name)[:, :2]
+    cmd_dir = cmd_vel / (torch.norm(cmd_vel, dim=1, keepdim=True) + 1e-8)
+ 
+    facing_dir_xy = facing_dir[:, :2]
+    facing_dir_xy = facing_dir_xy / (torch.norm(facing_dir_xy, dim=1, keepdim=True) + 1e-8)
+ 
+    alignment = torch.sum(facing_dir_xy * cmd_dir, dim=1) 
+    reward = torch.exp(3.0 * alignment) - 1.0
+
+    return reward
 

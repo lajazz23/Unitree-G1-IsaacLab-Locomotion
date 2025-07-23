@@ -15,6 +15,23 @@ a more user-friendly way.
 import argparse
 
 from isaaclab.app import AppLauncher
+# from vr.vr_raycast import perform_vr_raycast
+
+def export_policy(checkpoint_path, task_name, algorithm="ppo"):
+    algorithm = algorithm.lower()
+    experiment_cfg = load_cfg_from_registry(task_name, f"skrl_{algorithm}_cfg_entry_point")
+    env_cfg = parse_env_cfg(task_name)
+    env = gym.make(task_name, cfg=env_cfg)
+    env = SkrlVecEnvWrapper(env, ml_framework=args_cli.ml_framework)
+    runner = Runner(env, experiment_cfg)
+    runner.agent.load(checkpoint_path)
+    export_dir = os.path.dirname(checkpoint_path)
+   
+    from isaaclab_rl.rsl_rl import export_policy_as_onnx
+   
+    export_policy_as_onnx(policy=runner.agent, path=export_dir, filename="policy.onnx", verbose=True)
+    print(f"[INFO] Exported policy to {os.path.join(export_dir, 'policy.onnx')}")
+
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Play a checkpoint of an RL agent from skrl.")
@@ -46,6 +63,7 @@ parser.add_argument(
     help="The RL algorithm used for training the skrl agent.",
 )
 parser.add_argument("--real-time", action="store_true", default=False, help="Run in real-time, if possible.")
+parser.add_argument("--export_policy", action="store_true", help="Export the loaded policy to ONNX.")
 
 # append AppLauncher cli args
 AppLauncher.add_app_launcher_args(parser)
@@ -178,6 +196,13 @@ def main():
     # simulate environment
     while simulation_app.is_running():
         start_time = time.time()
+
+        # start_pos, direction = get_vr_controller_pose()
+        # if start_pos is not None and direction is not None:
+        #     hit_point = perform_vr_raycast(start_pos, direction)
+        #     if hit_point:
+        #         env.unwrapped._goal_pos = hit_point
+
 
         # run everything in inference mode
         with torch.inference_mode():
