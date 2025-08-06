@@ -120,11 +120,11 @@ def joint_symmetry_reward(env, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot
     asset = env.scene[asset_cfg.name]
     joint_pos = asset.data.joint_pos[:, asset_cfg.joint_ids]
 
-    # left_indices = [0, 3, 7, 11, 15, 19]   # Left leg joints g1
-    # right_indices = [1, 4, 8, 12, 16, 20]  # Right leg joints g1
+    left_indices = [0, 3, 7, 11, 15, 19]   # Left leg joints g1
+    right_indices = [1, 4, 8, 12, 16, 20]  # Right leg joints g1
 
-    right_indices = [0,1,2,3,4]    # Right leg joints h1
-    left_indices = [5,6,7,8,9] # left leg joints h1
+    # right_indices = [1,7,8,9,10]    # Right leg joints h1
+    # left_indices = [0,3,4,5,6] # left leg joints h1
 
     left_joints = joint_pos[:, left_indices]
     right_joints = joint_pos[:, right_indices]
