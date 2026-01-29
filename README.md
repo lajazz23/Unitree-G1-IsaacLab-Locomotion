@@ -1,4 +1,3 @@
-Paper Artifact: [Your Paper Title]
 This repository contains the code and scripts used for the experiments in our paper:
 
 Reinforcement Learning for Humanoid Locomotion in Isaac Lab with Virtual Reality Evaluation
